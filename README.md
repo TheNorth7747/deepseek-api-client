@@ -9,8 +9,10 @@
 | 自带 API Key | Web / Android（iOS 规划中） | 无需后端 |
 | --- | --- | --- |
 
-**在线预览（网页版）**：<https://thenorth7747.github.io/deepseek-api-client/>
-**下载 APK**：见 [Releases](https://github.com/TheNorth7747/deepseek-api-client/releases)
+- **在线预览（网页版）**：<https://thenorth7747.github.io/deepseek-api-client/>
+- **下载 APK**：见 [Releases](https://github.com/TheNorth7747/deepseek-api-client/releases)
+- **当前版本**：`1.2.0`（`versionCode 10200`）· 变更见 [CHANGELOG.md](CHANGELOG.md)
+- **应用内更新**：设置 → 版本 → 检查更新（读取本仓库的 Releases 页，覆盖安装不清数据）
 
 ## 截图
 
@@ -24,13 +26,18 @@
 | --- | --- | --- |
 | ![附件面板](docs/screenshots/04-attach.png) | ![设置](docs/screenshots/05-settings.png) | ![深色](docs/screenshots/06-session-dark.png) |
 
+| 按住说话 / 上滑取消 | 检查更新 | 版本与仓库入口 |
+| --- | --- | --- |
+| ![语音](docs/screenshots/07-voice-hold.png) | ![更新](docs/screenshots/08-update-found.png) | ![仓库](docs/screenshots/09-repo-row.png) |
+
 ## 功能
 
 - **对话**：流式输出、停止生成、重新生成、继续生成、编辑提问、消息分支切换
 - **上下文**：模型可选（`deepseek-flash` / `deepseek-v4-pro`），每条回答显示本轮 token 用量与按官方价目表估算的费用（区分高峰/空闲、缓存命中）
 - **联网**：深度思考、智能搜索、链接阅读与来源引用（依赖 DeepSeek API 的扩展能力）
 - **附件**：图片/文档上传（Files API），移动端「相册 / 文件」面板
-- **语音**：语音输入（ASR）、回答朗读（TTS）
+- **语音**：按住说话（ASR）/ 上滑取消、回答朗读（TTS）
+- **更新**：设置里检查更新，命中 GitHub Release 后应用内下载并交给系统安装器，覆盖安装保留本地数据
 - **本地优先**：会话与附件存在 IndexedDB，API Key 与设置存在 localStorage；支持 ZIP 导入/导出全部历史
 - **界面**：浅色/深色/跟随系统、中英文、安全区适配、抽屉「堆叠」过渡、`prefers-reduced-motion` 支持
 
@@ -45,6 +52,7 @@
 | 数据只留在自己设备 | 走官方账号体系 | 本地 IndexedDB，可整包导出 |
 | 按自己的习惯改界面、接到自己的工具链 | 不开放 | 源码 MIT，随便改 |
 | 多端同一套体验（Web + 手机，后续 iOS） | 各自独立 | 一份前端 + 跨平台壳 |
+
 ## 与上游 chat-demo 的差异
 
 | 项 | 上游 | 本仓库 |
@@ -87,6 +95,17 @@ cd android && ./gradlew assembleRelease
 
 > 出正式分发包前请改 `capacitor.config.json` 里的 `appId`/`appName`，并用自己的签名证书；本仓库不包含任何 keystore。
 
+## 版本与更新
+
+| 项 | 说明 |
+| --- | --- |
+| 版本号来源 | 仓库根 `package.json` 的 `version`，`android/app/build.gradle` 直接读取并换算 `versionCode`（`1.2.0 → 10200`），前端展示用构建期常量 `__APP_VERSION__`，三者不会漂移 |
+| 检查更新 | 读 `https://api.github.com/repos/TheNorth7747/deepseek-api-client/releases/latest`，按数字段比较版本 |
+| 下载 | 原生壳用 `@capacitor/filesystem` 下到缓存目录（WebView 不处理 Blob 下载） |
+| 安装 | 自定义插件 `AppUpdater`：`FileProvider` 授权 → `Intent.ACTION_VIEW` → 系统安装器 |
+| 数据 | 同包名 + 同签名 + `versionCode` 递增 = 覆盖安装，`IndexedDB`（对话、附件）与 `localStorage`（Key、设置）全部保留 |
+| 会丢数据的情形 | 换了签名证书、改了包名、手动卸载、系统清理应用数据；跨签名迁移请先用「导出所有历史对话」备份 |
+
 ## 数据与隐私
 
 - **API Key 只存在本机** localStorage，不会被提交到任何服务器（除了直接用于请求 `api.deepseek.com`）。
@@ -100,6 +119,7 @@ cd android && ./gradlew assembleRelease
 - **定位**：自定义插件 `DeviceLocation`（系统 `LocationManager` + `Geocoder`），Geocoder 不可用时按地级市中心坐标离线兜底；设置页打开即自动填好省市。
 - **应用内更新**：设置 → 版本 → 检查更新，读取 GitHub Release 最新 tag；有新版本时下载 APK 交给系统安装器。同包名 + 同签名 + versionCode 递增属覆盖安装，**本地对话与设置会保留**。
 - **动效**：统一 motion token（`src/app/motion.css`），面板/弹层/分段切换统一 200–280ms，支持 `prefers-reduced-motion`。
+
 ## 已知限制
 
 - 原生 Android 的 WebView 文件选择器**忽略 `capture`**，所以「拍照」入口在 Android 上被隐藏，只保留「相册/文件」；接入 `@capacitor/camera` 后可恢复（见 docs/mobile.md）。
@@ -107,15 +127,15 @@ cd android && ./gradlew assembleRelease
 - 定位的城市精度依赖系统 Geocoder；Geocoder 不可用时按最近地级市兜底，个别边界地区可能判到邻市。
 - 导出走系统分享面板，而不是直接落到「下载」目录（Android 10+ 沙箱限制）。
 - 极简系统（无任何能接收分享的应用）导出会提示文件已暂存到应用缓存。
-- 启动图标为自绘蓝底图形，与官方鲸鱼标识不同。
+- 启动图标为「官方鲸鱼 + API+ 角标」的组合，仅用于标识「自带 API Key」；正式分发请替换为自有品牌。
 
 ## 目录
 
 ```
 src/
   app/          布局、主题、安全区与原生壳适配
-  components/   聊天、输入、侧边栏、设置等界面
-  services/     API、会话存储、语音、导出
+  components/   聊天、输入、侧边栏、设置（含版本更新）等界面
+  services/     API、会话存储、语音、导出、定位（geo/）、更新（update/）
   i18n/         中英文文案
 public/         PWA manifest、图标、品牌图
 tools/          图标与启动图生成脚本（Python + Pillow）
