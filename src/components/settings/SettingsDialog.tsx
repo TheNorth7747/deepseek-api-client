@@ -6,6 +6,7 @@ import {
   IconDownloadOutline16,
   IconFollowsystemOutline16,
   IconLightOutline16,
+  IconLinkOutline14,
   IconSettingsOutline16,
   IconUploadOutline14,
 } from '../base/icons.js'
@@ -22,7 +23,15 @@ import { MODELS, formatTokens, getModel } from '../../services/api/models.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
 import { detectLocation } from '../../services/geo/detectLocation.js'
 import { autoLocate } from '../../services/geo/autoLocate.js'
-import { checkUpdate, downloadAndInstall, type UpdateInfo } from '../../services/update/checkUpdate.js'
+import {
+  REPO,
+  REPO_URL,
+  checkUpdate,
+  downloadAndInstall,
+  type UpdateInfo,
+} from '../../services/update/checkUpdate.js'
+import { AppUpdater } from '../../services/update/appUpdater.js'
+import { isNativePlatform } from '../../app/native.js'
 import {
   isChineseBrowser,
   setLocale,
@@ -308,6 +317,35 @@ const UpdateSetting = () => {
           </Button>
         }
       />
+      <SettingCell
+        label={t('settingsRepo')}
+        status={null}
+        description={REPO_URL.replace('https://', '')}
+        className={styles.modelCell}
+        action={
+          <Button
+            variant="outlined"
+            size="s"
+            onClick={async () => {
+              try {
+                if (isNativePlatform()) {
+                  await AppUpdater.openExternal({ url: REPO_URL })
+                } else {
+                  window.open(REPO_URL, '_blank', 'noopener,noreferrer')
+                }
+              } catch {
+                showToast({ key: 'openLinkFailed', type: 'error' })
+              }
+            }}
+          >
+            <span className={styles.repoLink}>
+              <IconLinkOutline14 />
+              {t('openRepo')}
+            </span>
+          </Button>
+        }
+      />
+      <div className={styles.repoHint}>{t('settingsRepoHint', { repo: REPO })}</div>
       {phase === 'available' || phase === 'downloading' ? (
         <Modal
           title={t('updateFoundTitle', { version: info?.latest ?? '' })}

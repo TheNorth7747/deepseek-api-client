@@ -1,7 +1,8 @@
 import { isNativePlatform } from '../../app/native.js'
 
 /** 仓库与更新源；改这里即可指向你自己的 fork */
-const REPO = 'TheNorth7747/deepseek-api-client'
+export const REPO = 'TheNorth7747/deepseek-api-client'
+export const REPO_URL = `https://github.com/${REPO}`
 const RELEASES_API = `https://api.github.com/repos/${REPO}/releases/latest`
 const RELEASES_PAGE = `https://github.com/${REPO}/releases/latest`
 

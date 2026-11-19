@@ -48,4 +48,22 @@ public class AppUpdaterPlugin extends Plugin {
             call.reject("install-failed: " + error.getMessage());
         }
     }
+
+    /** 用系统浏览器打开外部链接，避免 WebView 把应用自身导航走 */
+    @PluginMethod
+    public void openExternal(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null || url.isEmpty()) {
+            call.reject("url-missing");
+            return;
+        }
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("open-failed: " + error.getMessage());
+        }
+    }
 }

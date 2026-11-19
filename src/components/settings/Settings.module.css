@@ -513,3 +513,19 @@
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
 }
+/* GitHub 仓库行：链接文字与说明 */
+.repoLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.repoHint {
+  margin: -6px 0 6px;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+  word-break: break-all;
+}

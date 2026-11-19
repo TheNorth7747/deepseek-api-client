@@ -6,4 +6,5 @@ import { registerPlugin } from '@capacitor/core'
  */
 export const AppUpdater = registerPlugin<{
   install: (options: { fileName: string }) => Promise<void>
+  openExternal: (options: { url: string }) => Promise<void>
 }>('AppUpdater')
