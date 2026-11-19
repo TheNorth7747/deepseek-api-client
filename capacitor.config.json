@@ -1,0 +1,16 @@
+{
+  "appId": "com.example.deepseekchat",
+  "appName": "DeepSeek",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#ffffff"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#ffffff"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

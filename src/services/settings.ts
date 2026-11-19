@@ -1,0 +1,166 @@
+import { create } from 'zustand'
+import type { TtsVoice } from './api/speech.js'
+import { DEFAULT_MODEL_ID, MODELS, type ModelId } from './api/models.js'
+import { normalizeLocation, type UserLocation } from './location.js'
+
+export type Locale = 'zh-CN' | 'en-US'
+
+/** 主题偏好；默认跟随系统 */
+export type ThemePreference = 'light' | 'dark' | 'system'
+
+/** 本机设置，存 localStorage：API Key、模型、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态 */
+type Settings = {
+  apiKey: string | null
+  /** 当前模型 ID，新请求按此发送；历史消息保留各自的模型 */
+  modelId: ModelId
+  /** 顶栏静音开关：开启后不朗读回答，朗读按钮置灰 */
+  readAloudMuted: boolean
+  locale: Locale
+  themePreference: ThemePreference
+  location: UserLocation | null
+  ttsVoice: TtsVoice
+  thinking: boolean
+  search: boolean
+  siderCollapsed: boolean
+}
+
+const KEYS = {
+  apiKey: 'chat-demo:api-key',
+  modelId: 'chat-demo:model',
+  readAloudMuted: 'chat-demo:read-aloud-muted',
+  locale: 'chat-demo:locale',
+  location: 'chat-demo:location',
+  themePreference: 'chat-demo:theme-preference',
+  ttsVoice: 'chat-demo:tts-voice',
+  thinking: 'chat-demo:thinking',
+  search: 'chat-demo:search',
+  siderCollapsed: 'chat-demo:sider-collapsed',
+} as const
+
+const read = (key: string) => {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+const write = (key: string, value: string | null) => {
+  try {
+    if (value === null) {
+      localStorage.removeItem(key)
+    } else {
+      localStorage.setItem(key, value)
+    }
+  } catch {
+    // 存储不可用时只在内存中生效
+  }
+}
+
+/** 位置选择模式跟随浏览器语言，与应用内选择的界面语言无关。 */
+export const isChineseBrowser = (): boolean =>
+  (typeof navigator === 'undefined' ? 'zh' : navigator.language).toLowerCase().startsWith('zh')
+
+const initialLocale = (): Locale => {
+  const saved = read(KEYS.locale)
+  if (saved === 'zh-CN' || saved === 'en-US') {
+    return saved
+  }
+  return isChineseBrowser() ? 'zh-CN' : 'en-US'
+}
+
+const initialLocation = (): UserLocation | null => {
+  try {
+    const location = normalizeLocation(JSON.parse(read(KEYS.location) ?? 'null'))
+    if (!location) {
+      return null
+    }
+    return isChineseBrowser()
+      ? location.region === 'CN' && location.province
+        ? location
+        : null
+      : { region: location.region }
+  } catch {
+    return null
+  }
+}
+
+/** 未保存过时跟随系统 */
+const initialThemePreference = (): ThemePreference => {
+  const saved = read(KEYS.themePreference)
+  return saved === 'light' || saved === 'dark' ? saved : 'system'
+}
+
+/** 未保存过时使用服务端默认音色 stella（海星） */
+const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
+
+/** 未保存过或保存的是已下线的模型名时使用默认模型 */
+const initialModelId = (): ModelId => {
+  const saved = read(KEYS.modelId)
+  return saved && MODELS.some((model) => model.id === saved) ? saved : DEFAULT_MODEL_ID
+}
+
+export const useSettings = create<Settings>(() => ({
+  apiKey: read(KEYS.apiKey),
+  modelId: initialModelId(),
+  readAloudMuted: read(KEYS.readAloudMuted) === 'true',
+  locale: initialLocale(),
+  location: initialLocation(),
+  themePreference: initialThemePreference(),
+  ttsVoice: initialTtsVoice(),
+  thinking: read(KEYS.thinking) === 'true',
+  search: read(KEYS.search) === 'true',
+  siderCollapsed: read(KEYS.siderCollapsed) === 'true',
+}))
+
+export const setLocale = (locale: Locale) => {
+  write(KEYS.locale, locale)
+  useSettings.setState({ locale })
+}
+
+export const setLocation = (value: UserLocation | null) => {
+  const location = normalizeLocation(value)
+  write(KEYS.location, location ? JSON.stringify(location) : null)
+  useSettings.setState({ location })
+}
+
+export const setThemePreference = (themePreference: ThemePreference) => {
+  write(KEYS.themePreference, themePreference)
+  useSettings.setState({ themePreference })
+}
+
+export const setTtsVoice = (ttsVoice: TtsVoice) => {
+  write(KEYS.ttsVoice, ttsVoice)
+  useSettings.setState({ ttsVoice })
+}
+
+export const setApiKey = (apiKey: string | null) => {
+  write(KEYS.apiKey, apiKey)
+  useSettings.setState({ apiKey })
+}
+
+export const setModelId = (modelId: ModelId) => {
+  write(KEYS.modelId, modelId)
+  useSettings.setState({ modelId })
+}
+
+/** 静音开关：关掉朗读能力，同时停掉正在播放的朗读 */
+export const setReadAloudMuted = (readAloudMuted: boolean) => {
+  write(KEYS.readAloudMuted, String(readAloudMuted))
+  useSettings.setState({ readAloudMuted })
+}
+
+export const setThinking = (thinking: boolean) => {
+  write(KEYS.thinking, String(thinking))
+  useSettings.setState({ thinking })
+}
+
+export const setSearch = (search: boolean) => {
+  write(KEYS.search, String(search))
+  useSettings.setState({ search })
+}
+
+export const setSiderCollapsed = (siderCollapsed: boolean) => {
+  write(KEYS.siderCollapsed, String(siderCollapsed))
+  useSettings.setState({ siderCollapsed })
+}

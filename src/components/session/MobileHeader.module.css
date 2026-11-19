@@ -1,0 +1,63 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  /* 高度与内边距都加上刘海高度，顶栏内容不会被状态栏压住 */
+  height: calc(56px + var(--app-safe-top, env(safe-area-inset-top)));
+  padding: calc(8px + var(--app-safe-top, env(safe-area-inset-top))) 12px 8px;
+}
+
+/* 左侧：悬浮圆形按钮。双写类名提高优先级，避免被 IconButton 的尺寸类覆盖 */
+.round.round {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--dsw-alias-label-primary);
+  background-color: var(--dsw-alias-bg-base);
+  box-shadow:
+    0 1px 2px rgba(15, 17, 21, 0.06),
+    0 0 0 0.5px rgba(15, 17, 21, 0.08);
+
+  [data-ds-dark-theme] & {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* 右侧：胶囊容器，内部并排「静音」与「新建对话」 */
+.pill {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  margin-left: auto;
+  height: 38px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background-color: var(--dsw-alias-bg-base);
+  box-shadow:
+    0 1px 2px rgba(15, 17, 21, 0.06),
+    0 0 0 0.5px rgba(15, 17, 21, 0.08);
+
+  [data-ds-dark-theme] & {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  }
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
