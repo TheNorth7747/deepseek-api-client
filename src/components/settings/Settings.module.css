@@ -481,3 +481,35 @@
     max-width: 100%;
   }
 }
+
+/* 更新弹层：说明区可滚动，按钮区固定 */
+.updateBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.updateMeta {
+  font-size: 13px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.updateNotes {
+  max-height: 220px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 12px;
+  background-color: var(--dsw-alias-interactive-bg-hover);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.updateTip {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}

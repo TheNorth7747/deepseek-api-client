@@ -98,6 +98,7 @@ cd android && ./gradlew assembleRelease
 
 - **语音**：WebView 里 `getUserMedia` 需要原生放行麦克风权限，`MainActivity` 已实现 `onPermissionRequest`；按住说话、上滑取消。
 - **定位**：自定义插件 `DeviceLocation`（系统 `LocationManager` + `Geocoder`），Geocoder 不可用时按地级市中心坐标离线兜底；设置页打开即自动填好省市。
+- **应用内更新**：设置 → 版本 → 检查更新，读取 GitHub Release 最新 tag；有新版本时下载 APK 交给系统安装器。同包名 + 同签名 + versionCode 递增属覆盖安装，**本地对话与设置会保留**。
 - **动效**：统一 motion token（`src/app/motion.css`），面板/弹层/分段切换统一 200–280ms，支持 `prefers-reduced-motion`。
 ## 已知限制
 

@@ -1,9 +1,9 @@
 {
-  "name": "deepseek-api-client",
-  "version": "1.0.0",
-  "description": "用自己的 API Key 驱动 DeepSeek 的客户端（Web / Android，iOS 规划中）。",
+  "name": "chat-demo",
+  "version": "1.2.0",
+  "description": "基于 DeepSeek API 的静态聊天示例。",
   "license": "MIT",
-  "private": false,
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "rspack serve -c rspack.config.ts",

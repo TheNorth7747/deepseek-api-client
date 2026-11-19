@@ -22,6 +22,7 @@ import { MODELS, formatTokens, getModel } from '../../services/api/models.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
 import { detectLocation } from '../../services/geo/detectLocation.js'
 import { autoLocate } from '../../services/geo/autoLocate.js'
+import { checkUpdate, downloadAndInstall, type UpdateInfo } from '../../services/update/checkUpdate.js'
 import {
   isChineseBrowser,
   setLocale,
@@ -147,6 +148,7 @@ const SettingsContent = () => {
               <ModelSetting />
               <TtsVoiceSetting />
               <LocationSetting />
+              <UpdateSetting />
             </>
           ) : (
             <>
@@ -250,6 +252,94 @@ const useHistoryDelete = () => {
     },
     confirm,
   }
+}
+
+type UpdatePhase = 'idle' | 'checking' | 'latest' | 'available' | 'downloading'
+
+/**
+ * 版本与更新：比对 GitHub Release 最新 tag，有新版本时下载 APK 交给系统安装器。
+ * 覆盖安装（同包名 + 同签名 + versionCode 递增）会保留 IndexedDB 里的对话与本地设置。
+ */
+const UpdateSetting = () => {
+  const t = useTranslate()
+  const [phase, setPhase] = useState<UpdatePhase>('idle')
+  const [info, setInfo] = useState<UpdateInfo | null>(null)
+
+  const runCheck = async () => {
+    setPhase('checking')
+    try {
+      const result = await checkUpdate()
+      setInfo(result)
+      setPhase(result.hasUpdate ? 'available' : 'latest')
+    } catch {
+      setPhase('idle')
+      showToast({ key: 'updateFailed', type: 'error' })
+    }
+  }
+
+  const install = async () => {
+    if (!info) {
+      return
+    }
+    setPhase('downloading')
+    try {
+      await downloadAndInstall(info)
+      showToast({ key: 'updateInstallHint' })
+    } catch {
+      showToast({ key: 'updateFailed', type: 'error' })
+    } finally {
+      setPhase('available')
+    }
+  }
+
+  const label =
+    phase === 'checking' ? t('checkingUpdate') : phase === 'latest' ? t('updateLatest') : t('checkUpdate')
+
+  return (
+    <>
+      <SettingCell
+        label={t('settingsVersion')}
+        status={null}
+        description={__APP_VERSION__}
+        className={styles.modelCell}
+        action={
+          <Button variant="outlined" size="s" disabled={phase === 'checking'} onClick={runCheck}>
+            {label}
+          </Button>
+        }
+      />
+      {phase === 'available' || phase === 'downloading' ? (
+        <Modal
+          title={t('updateFoundTitle', { version: info?.latest ?? '' })}
+          closable
+          onClose={() => setPhase('idle')}
+          footer={
+            <>
+              <Button variant="outlined" size="m" onClick={() => setPhase('idle')}>
+                {t('updateLater')}
+              </Button>
+              <Button
+                variant="primary"
+                size="m"
+                disabled={phase === 'downloading'}
+                onClick={install}
+              >
+                {phase === 'downloading' ? t('updateDownloading') : t('updateInstall')}
+              </Button>
+            </>
+          }
+        >
+          <div className={styles.updateBody}>
+            <div className={styles.updateMeta}>
+              {t('updateCurrentTo', { current: info?.current ?? '', latest: info?.latest ?? '' })}
+            </div>
+            <pre className={styles.updateNotes}>{info?.notes?.trim() || t('updateNoNotes')}</pre>
+            <div className={styles.updateTip}>{t('updateDataKept')}</div>
+          </div>
+        </Modal>
+      ) : null}
+    </>
+  )
 }
 
 const LocationSetting = () => {
