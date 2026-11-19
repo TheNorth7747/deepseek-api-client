@@ -1,7 +1,7 @@
 {
-  "name": "deepseek-chat-android",
+  "name": "deepseek-api-client",
   "version": "1.0.0",
-  "description": "非官方 DeepSeek 安卓客户端：基于 chat-demo 前端 + Capacitor 壳。",
+  "description": "用自己的 API Key 驱动 DeepSeek 的客户端（Web / Android，iOS 规划中）。",
   "license": "MIT",
   "private": false,
   "type": "module",

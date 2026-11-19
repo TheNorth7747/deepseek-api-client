@@ -1,14 +1,16 @@
-# DeepSeek Chat · Android（非官方客户端）
+# DeepSeek API Client（非官方）
 
-把 DeepSeek 官方的开源前端 [`deepseek-ai/chat-demo`](https://github.com/deepseek-ai/chat-demo) 做成一个**可以直接装到安卓手机上用的 App**：官方 API Key 直连、长对话、联网搜索、文件上传、语音输入，界面按官方 iOS App 的观感重做。
+**用自己的 API Key 驱动 DeepSeek 的客户端。** 官方已有自己的网页版和手机 App —— 这个项目解决的不是「有没有客户端」，而是**自带 Key、自己掌控数据与额度**：用 DeepSeek 开放平台签发的 API Key 直连官方接口，模型可选、用量与费用可见、对话只留在你自己的设备上。
+
+前端复用官方开源的 [`deepseek-ai/chat-demo`](https://github.com/deepseek-ai/chat-demo)，外面套一层跨平台壳：**Web 直接可用，Android 已能出 APK，iOS 走同一套壳后续补上**（同一份前端，不重写）。
 
 > **免责声明**：本项目是社区作品，**不是** DeepSeek 官方发布的应用，与杭州深度求索人工智能基础技术研究有限公司无隶属关系。名称与图标仅用于说明「兼容 DeepSeek API」；如需正式分发请自行替换为你的品牌。模型能力与计费由 DeepSeek 开放平台提供。
 
-| Android 7.0+ | 需要自己的 API Key | 无需后端 |
+| 自带 API Key | Web / Android（iOS 规划中） | 无需后端 |
 | --- | --- | --- |
 
-**在线预览（网页版）**：<https://thenorth7747.github.io/deepseek-chat-android/>
-**下载 APK**：见 [Releases](https://github.com/TheNorth7747/deepseek-chat-android/releases)
+**在线预览（网页版）**：<https://thenorth7747.github.io/deepseek-api-client/>
+**下载 APK**：见 [Releases](https://github.com/TheNorth7747/deepseek-api-client/releases)
 
 ## 截图
 
@@ -32,6 +34,17 @@
 - **本地优先**：会话与附件存在 IndexedDB，API Key 与设置存在 localStorage；支持 ZIP 导入/导出全部历史
 - **界面**：浅色/深色/跟随系统、中英文、安全区适配、抽屉「堆叠」过渡、`prefers-reduced-motion` 支持
 
+## 为什么不用官方 App
+
+官方 App 开箱即用。这个项目补的是它不覆盖的几件事：
+
+| 你想要的 | 官方 App | 本项目 |
+| --- | --- | --- |
+| 换模型，指定 `deepseek-flash` / `deepseek-v4-pro` | 由官方路由决定 | 设置里直接选 |
+| 看清每轮 token 与费用（含缓存命中、高峰/空闲价） | 不展示 | 每条回答下方显示 |
+| 数据只留在自己设备 | 走官方账号体系 | 本地 IndexedDB，可整包导出 |
+| 按自己的习惯改界面、接到自己的工具链 | 不开放 | 源码 MIT，随便改 |
+| 多端同一套体验（Web + 手机，后续 iOS） | 各自独立 | 一份前端 + 跨平台壳 |
 ## 与上游 chat-demo 的差异
 
 | 项 | 上游 | 本仓库 |

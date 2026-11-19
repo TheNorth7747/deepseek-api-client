@@ -1,18 +1,21 @@
-"""把 Android 原生工程的启动图标与启动画面换成本项目的品牌标记。
+"""把 Android 原生工程的启动图标与启动画面换成「官方鲸鱼 + API+ 角标」。
 
 用法（需要 Pillow）：
     python tools/make_android_icons.py
-读取 android/app/src/main/res 下已有的 PNG 尺寸，按同样尺寸重绘，
-因此新增密度目录时不用改脚本。
+
+读取 android/app/src/main/res 下已有 PNG 的尺寸，按同样尺寸重绘，
+因此新增密度目录时不用改脚本。图标内容由 make_app_icons 统一绘制。
 """
 
 from __future__ import annotations
 
 import pathlib
+import sys
 
 from PIL import Image, ImageDraw
 
-from make_app_icons import BRAND_BOTTOM, BRAND_TOP, draw_icon
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from make_app_icons import BRAND, build_foreground, build_icon  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 RES = HERE / "android" / "app" / "src" / "main" / "res"
@@ -24,21 +27,11 @@ def circle_mask(size: int) -> Image.Image:
     return mask.resize((size, size), Image.LANCZOS)
 
 
-def glyph_layer(size: int) -> Image.Image:
-    """自适应图标前景：透明底 + 居中鲸形，四周留出约 1/3 的安全边距。"""
-    big = size * 4
-    canvas = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    inner = round(big * 0.58)
-    mark = draw_icon(inner, rounded=False)
-    # 只保留白色图形与鲸形本体：把整图缩放到中心
-    canvas.alpha_composite(mark, ((big - inner) // 2, (big - inner) // 2))
-    return canvas.resize((size, size), Image.LANCZOS)
-
-
 def splash(size_wh: tuple[int, int]) -> Image.Image:
     w, h = size_wh
     canvas = Image.new("RGBA", (w, h), (255, 255, 255, 255))
-    mark = draw_icon(round(min(w, h) * 0.28), rounded=True)
+    side = round(min(w, h) * 0.3)
+    mark = build_icon(side, rounded=True)
     canvas.alpha_composite(mark, ((w - mark.width) // 2, (h - mark.height) // 2))
     return canvas.convert("RGB")
 
@@ -59,13 +52,13 @@ def main() -> None:
                 size = existing.size
 
             if name == "ic_launcher_foreground.png":
-                icon = glyph_layer(size[0])
+                icon = build_foreground(size[0])
             elif name == "ic_launcher_round.png":
-                base = draw_icon(size[0], rounded=False).convert("RGBA")
+                base = build_icon(size[0], rounded=False)
                 base.putalpha(circle_mask(size[0]))
                 icon = base
             else:
-                icon = draw_icon(size[0], rounded=True)
+                icon = build_icon(size[0], rounded=True)
 
             icon.save(target)
             print(f"wrote {target.relative_to(HERE)} {size}")
@@ -76,18 +69,17 @@ def main() -> None:
         splash(size).save(splash_png)
         print(f"wrote {splash_png.relative_to(HERE)} {size}")
 
-    # 自适应图标背景色：与品牌蓝一致
+    # 自适应图标背景层：品牌蓝
     background = RES / "values" / "ic_launcher_background.xml"
     if background.exists():
         background.write_text(
             '<?xml version="1.0" encoding="utf-8"?>\n'
             "<resources>\n"
-            f'    <color name="ic_launcher_background">#{BRAND_TOP[0]:02X}{BRAND_TOP[1]:02X}{BRAND_TOP[2]:02X}</color>\n'
+            f'    <color name="ic_launcher_background">#{BRAND[0]:02X}{BRAND[1]:02X}{BRAND[2]:02X}</color>\n'
             "</resources>\n",
             encoding="utf-8",
         )
         print(f"wrote {background.relative_to(HERE)}")
-    _ = BRAND_BOTTOM
 
 
 if __name__ == "__main__":
