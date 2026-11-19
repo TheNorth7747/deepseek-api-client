@@ -7,6 +7,9 @@
 | Android 7.0+ | 需要自己的 API Key | 无需后端 |
 | --- | --- | --- |
 
+**在线预览（网页版）**：<https://thenorth7747.github.io/deepseek-chat-android/>
+**下载 APK**：见 [Releases](https://github.com/TheNorth7747/deepseek-chat-android/releases)
+
 ## 截图
 
 真机截图（MuMu 模拟器 / Android 15，1080×1920，深色与浅色各一组）：
