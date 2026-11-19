@@ -21,7 +21,8 @@ export const SessionView = ({
   const isMobile = useIsMobile()
   const title = session.title || t('untitledChat')
   return (
-    <div className={styles.view}>
+    /* key 绑定会话 id：切换会话（含从首页点「新对话」）时重新挂载并播放入场动画 */
+    <div className={styles.view} key={session.id}>
       {isMobile ? (
         <MobileHeader title={title} />
       ) : (

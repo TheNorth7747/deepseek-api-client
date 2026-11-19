@@ -1,4 +1,5 @@
 .view {
+  animation: fadeSlideIn var(--motion-page) var(--motion-ease-out);
   position: absolute;
   inset: 0;
   display: flex;

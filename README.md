@@ -94,10 +94,16 @@ cd android && ./gradlew assembleRelease
 - 「导出所有历史对话」生成的 ZIP 不含 API Key 与设置。
 - 本仓库不含任何密钥、证书或用户数据；`.env*` 与 `*.keystore` 已在 `.gitignore` 中。
 
+## 壳层能力（Android）
+
+- **语音**：WebView 里 `getUserMedia` 需要原生放行麦克风权限，`MainActivity` 已实现 `onPermissionRequest`；按住说话、上滑取消。
+- **定位**：自定义插件 `DeviceLocation`（系统 `LocationManager` + `Geocoder`），Geocoder 不可用时按地级市中心坐标离线兜底；设置页打开即自动填好省市。
+- **动效**：统一 motion token（`src/app/motion.css`），面板/弹层/分段切换统一 200–280ms，支持 `prefers-reduced-motion`。
 ## 已知限制
 
 - 原生 Android 的 WebView 文件选择器**忽略 `capture`**，所以「拍照」入口在 Android 上被隐藏，只保留「相册/文件」；接入 `@capacitor/camera` 后可恢复（见 docs/mobile.md）。
 - 系统返回键未接管：抽屉/弹窗打开时按返回会直接退出应用。
+- 定位的城市精度依赖系统 Geocoder；Geocoder 不可用时按最近地级市兜底，个别边界地区可能判到邻市。
 - 导出走系统分享面板，而不是直接落到「下载」目录（Android 10+ 沙箱限制）。
 - 极简系统（无任何能接收分享的应用）导出会提示文件已暂存到应用缓存。
 - 启动图标为自绘蓝底图形，与官方鲸鱼标识不同。

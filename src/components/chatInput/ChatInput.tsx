@@ -13,6 +13,7 @@ import {
 } from '../base/icons.js'
 import { setSearch, setThinking, useSettings } from '../../services/settings.js'
 import { useIsMobile } from '../../app/viewport.js'
+import { usePresence } from '../../app/usePresence.js'
 import { isNativeAndroid } from '../../app/native.js'
 import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
@@ -34,7 +35,8 @@ import { showToast } from '../base/toastState.js'
 import { ACCEPT, useUploads } from '../../services/attachments.js'
 import { DraftAttachments } from './DraftAttachments.js'
 import { useVoiceInput } from './useVoiceInput.js'
-import { VoiceButton } from './VoiceButton.js'
+import { CANCEL_DISTANCE, VoiceButton } from './VoiceButton.js'
+import { VoiceHud } from './VoiceHud.js'
 import { Spectrum } from './Spectrum.js'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './ChatInput.module.css'
@@ -65,6 +67,10 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const togglesRef = useRef<HTMLDivElement>(null)
   /** 移动端附件面板：拍照 / 相册 / 文件 */
   const [pickerOpen, setPickerOpen] = useState(false)
+  // 附件面板保留挂载到退场动画结束，避免瞬间消失
+  const attachSheet = usePresence(pickerOpen, 160)
+  /** 长按录音时手指相对按钮的纵向偏移，负值表示正在上滑取消 */
+  const [voiceOffset, setVoiceOffset] = useState(0)
 
   useLayoutEffect(() => {
     const toggles = togglesRef.current
@@ -174,6 +180,11 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
         }
       }}
     >
+      <VoiceHud
+        open={voice.status === 'recording'}
+        seconds={voice.seconds}
+        cancelling={voiceOffset < -CANCEL_DISTANCE}
+      />
       <DraftAttachments items={attachments} onRetry={retryFile} onRemove={removeFile} />
       <div className={styles.textareaWrapper}>
         <textarea
@@ -321,25 +332,32 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               <IconSendOutline16 />
             </button>
           ) : (
-            /* 输入为空时只留「语音」，与官方 App 一致，也避免窄屏上与能力胶囊抢空间 */
+            /* 输入为空时只留「语音」：按住说话，上滑取消 */
             <VoiceButton
               status={voice.status}
               disabled={!voice.available}
               seconds={voice.seconds}
-              onClick={() => {
-                if (
-                  voice.status !== 'idle' ||
-                  (!useChatStore.getState().importingHistory && ensureApiKey())
-                ) {
-                  void voice.toggle()
+              onHoldStart={() => {
+                if (!useChatStore.getState().importingHistory && ensureApiKey()) {
+                  void voice.start()
                 }
               }}
+              onHoldMove={setVoiceOffset}
+              onHoldEnd={(cancelled) => {
+                setVoiceOffset(0)
+                if (cancelled) {
+                  voice.cancel()
+                  return
+                }
+                void voice.finish()
+              }}
+              onTapHint={() => showToast({ key: 'voiceHoldToTalk' })}
             />
           )}
         </div>
       </div>
-      {isMobile && pickerOpen ? (
-        <div className={styles.attachSheet}>
+      {isMobile && attachSheet.mounted ? (
+        <div className={clsx(styles.attachSheet, attachSheet.closing && styles.attachSheetClosing)}>
           {/* 原生 Android 的 WebView 文件选择器忽略 capture，点了也只会打开相册，
               接入 @capacitor/camera 之前先不显示，避免两个按钮做同一件事 */}
           {isNativeAndroid() ? null : (

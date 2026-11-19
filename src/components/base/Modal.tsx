@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslate } from '../../i18n/index.js'
 import { IconCloseOutline16 } from './icons.js'
@@ -33,12 +33,23 @@ export const Modal = ({
   const titleId = useId()
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  // 关闭时先播退场动画再真正卸载，避免弹层瞬间消失
+  const [closing, setClosing] = useState(false)
+  const close = useCallback(() => {
+    setClosing((already) => {
+      if (already) {
+        return already
+      }
+      window.setTimeout(() => onCloseRef.current(), 170)
+      return true
+    })
+  }, [])
   useEffect(() => {
     const token = {}
     openModals.push(token)
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && openModals.at(-1) === token) {
-        onCloseRef.current()
+        close()
       }
     }
     document.addEventListener('keydown', onKeyDown)
@@ -46,12 +57,12 @@ export const Modal = ({
       openModals.splice(openModals.indexOf(token), 1)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [])
+  }, [close])
 
   return createPortal(
     <div
-      className={styles.overlay}
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      className={clsx(styles.overlay, closing && styles.overlayClosing)}
+      onMouseDown={(event) => event.target === event.currentTarget && close()}
     >
       <div
         className={clsx(styles.content, className)}
@@ -69,7 +80,7 @@ export const Modal = ({
               tone="primary"
               icon={<IconCloseOutline16 />}
               aria-label={t('close')}
-              onClick={onClose}
+              onClick={close}
             />
           ) : null}
         </div>

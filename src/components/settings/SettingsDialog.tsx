@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDarkOutline16,
   IconDataOutline16,
@@ -20,6 +20,8 @@ import { saveBlob } from '../../services/download.js'
 import { useChatStore } from '../../services/chat/store.js'
 import { MODELS, formatTokens, getModel } from '../../services/api/models.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
+import { detectLocation } from '../../services/geo/detectLocation.js'
+import { autoLocate } from '../../services/geo/autoLocate.js'
 import {
   isChineseBrowser,
   setLocale,
@@ -62,6 +64,36 @@ const SettingsContent = () => {
   const isMobile = useIsMobile()
   // 打开时按调用方指定的分组选中，之后在弹窗内切换
   const [section, setSection] = useState(() => useSettingsDialog.getState().section)
+  const navRef = useRef<HTMLDivElement>(null)
+  // 打开设置时若还没位置，自动取一次：省市直接填好，用户不用手选
+  useEffect(() => {
+    void autoLocate()
+  }, [])
+  const [indicator, setIndicator] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false })
+  // 测量当前选中 tab 的位置，交给滑动底板；桌面是竖排、移动端是横排，同一套逻辑都成立
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) {
+      return
+    }
+    const update = () => {
+      const active = nav.querySelector<HTMLElement>('[aria-selected="true"]')
+      if (!active) {
+        return
+      }
+      setIndicator({
+        x: active.offsetLeft,
+        y: active.offsetTop,
+        width: active.offsetWidth,
+        height: active.offsetHeight,
+        ready: true,
+      })
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [section])
   // 切换分组不丢失正在输入的 API Key 与导入状态
   const apiKeyEditor = useApiKeyEditor()
   const historyImport = useHistoryImport()
@@ -81,7 +113,18 @@ const SettingsContent = () => {
           }
         }}
       >
-        <div role="tablist" className={styles.navigation}>
+        <div role="tablist" className={styles.navigation} ref={navRef}>
+          {/* 选中态底板：在容器内滑动，而不是每个 tab 自己换底色 */}
+          <span
+            aria-hidden="true"
+            className={styles.navIndicator}
+            style={{
+              transform: `translate(${indicator.x}px, ${indicator.y}px)`,
+              width: indicator.width,
+              height: indicator.height,
+              opacity: indicator.ready ? 1 : 0,
+            }}
+          />
           {sections.map((item) => (
             <button
               key={item.value}
@@ -96,7 +139,7 @@ const SettingsContent = () => {
             </button>
           ))}
         </div>
-        <div role="tabpanel" className={styles.content}>
+        <div role="tabpanel" key={section} className={clsx(styles.content, styles.sectionEnter)}>
           {section === 'general' ? (
             <>
               <ThemeSetting />
@@ -211,6 +254,28 @@ const useHistoryDelete = () => {
 
 const LocationSetting = () => {
   const t = useTranslate()
+  const [locating, setLocating] = useState(false)
+  const detect = useCallback(async () => {
+    setLocating(true)
+    try {
+      const detected = await detectLocation()
+      if (detected.provinceCode) {
+        setLocation({
+          region: 'CN',
+          province: detected.provinceCode,
+          city: detected.cityCode,
+        })
+        showToast({ key: 'settingsLocationDetected', params: { place: detected.label } })
+      } else {
+        showToast({ key: 'settingsLocationFailed' })
+      }
+    } catch (error) {
+      const denied = error instanceof Error && /denied|permission/i.test(error.message)
+      showToast({ key: denied ? 'settingsLocationDenied' : 'settingsLocationFailed' })
+    } finally {
+      setLocating(false)
+    }
+  }, [])
   const locale = useSettings((state) => state.locale)
   const location = useSettings((state) => state.location)
   const province =
@@ -225,6 +290,14 @@ const LocationSetting = () => {
       className={styles.locationCell}
       action={
         <div className={styles.locationSelectors}>
+          <Button
+            variant="outlined"
+            size="s"
+            disabled={locating}
+            onClick={() => void detect()}
+          >
+            {locating ? t('settingsLocationDetecting') : t('settingsLocationDetect')}
+          </Button>
           {isChineseBrowser() ? (
             <>
               <Select

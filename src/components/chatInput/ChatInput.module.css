@@ -321,7 +321,26 @@
   background: var(--dsw-alias-button-primary-fill);
   color: var(--dsw-static-neutral-bluish-00);
   cursor: pointer;
-  transition: background 0.2s ease;
+  position: relative;
+  transition: background var(--motion-base) var(--motion-ease-standard);
+
+  /* 主按钮光效：独立伪元素，按下时短暂出现低透明辉光，平时完全不可见 */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--glow-brand), rgba(77, 107, 254, 0));
+    filter: blur(var(--glow-blur));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-base) var(--motion-ease-standard);
+  }
+
+  &:not(.disabled):active::after {
+    opacity: 0.9;
+  }
 
   &:not(.disabled):hover {
     background: var(--dsw-alias-button-primary-hover);
@@ -338,6 +357,14 @@
   display: flex;
   gap: 10px;
   padding: 10px 4px 2px;
+  /* 从输入卡内部展开：位移 + 缩放 + 淡入，不做高度动画以避免重排 */
+  animation: sheetIn var(--motion-base) var(--motion-ease-out);
+  transform-origin: top center;
+}
+
+.attachSheetClosing {
+  animation: sheetOut var(--motion-fast) var(--motion-ease-standard) forwards;
+  pointer-events: none;
 }
 
 .attachTile {

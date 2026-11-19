@@ -14,6 +14,7 @@
 }
 
 .navigation {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -21,6 +22,27 @@
   width: 172px;
   margin: 6px 12px 0 -12px;
   padding-top: 4px;
+}
+
+/* 滑动底板：只做 transform / width / height 过渡，不触发重排 */
+.navIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 12px;
+  background-color: var(--dsw-alias-interactive-bg-hover);
+  transition:
+    transform var(--motion-base) var(--motion-ease-standard),
+    width var(--motion-base) var(--motion-ease-standard),
+    height var(--motion-base) var(--motion-ease-standard),
+    opacity var(--motion-fast) var(--motion-ease-standard);
+  pointer-events: none;
+}
+
+/* 分区内容：切换时短淡入 + 6px 位移 */
+.sectionEnter {
+  animation: fadeSlideIn var(--motion-base) var(--motion-ease-out);
 }
 
 .navItem {
@@ -49,9 +71,16 @@
     flex-shrink: 0;
   }
 
-  &:hover,
-  &.navItemActive {
+  position: relative;
+  z-index: 1;
+
+  &:hover {
     background-color: var(--dsw-alias-interactive-bg-hover);
+  }
+
+  &.navItemActive {
+    background-color: transparent;
+    font-weight: 500;
   }
 
   &:focus-visible {

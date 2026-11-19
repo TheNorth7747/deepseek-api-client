@@ -9,7 +9,7 @@ export type VoiceInputStatus = 'idle' | 'recording' | 'transcribing'
 
 /**
  * 录音依赖 getUserMedia，只在安全上下文可用（HTTPS、localhost、file://）。
- * 普通 HTTP 页面上直接禁用入口，避免点击后必然失败。
+ * 原生壳里 WebView 源是 https://localhost，只要壳层放行麦克风权限即可用。
  */
 const AVAILABLE = typeof window === 'undefined' || window.isSecureContext
 
@@ -26,8 +26,8 @@ const describeRecordingError = (error: unknown): TranslationMessage => {
 }
 
 /**
- * 语音输入（oneshot）：点击开始录音，再次点击结束并转写，结果交给 onText 填入输入框。
- * 转写中再次点击取消。录满 120 秒自动结束。
+ * 语音输入：按住录音、松手转写；上滑一段距离后松手就是取消。
+ * 对外暴露 start / finish / cancel，交互层（长按手势）自己决定何时调用。
  */
 export const useVoiceInput = (onText: (text: string) => void) => {
   const [status, setStatus] = useState<VoiceInputStatus>('idle')
@@ -55,7 +55,7 @@ export const useVoiceInput = (onText: (text: string) => void) => {
   const finish = useCallback(async () => {
     const recording = recordingRef.current
     if (!recording) {
-      // 仍在等待麦克风授权时也允许取消；迟到的录音对象会立即释放。
+      // 仍在等待麦克风授权时也允许结束；迟到的录音对象会立即释放。
       cancel()
       return
     }
@@ -96,16 +96,9 @@ export const useVoiceInput = (onText: (text: string) => void) => {
     }
   }, [cancel])
 
-  const toggle = useCallback(async () => {
+  const start = useCallback(async () => {
     if (!AVAILABLE) {
-      return
-    }
-    if (status === 'recording') {
-      await finish()
-      return
-    }
-    if (status === 'transcribing') {
-      cancel()
+      showToast({ key: 'voiceInputRequiresHttps' })
       return
     }
     const operation = ++operationRef.current
@@ -128,7 +121,20 @@ export const useVoiceInput = (onText: (text: string) => void) => {
         showToast(describeRecordingError(error))
       }
     }
-  }, [status, finish, cancel])
+  }, [finish])
+
+  /** 兼容旧入口：点按切换（不使用长按手势的场合） */
+  const toggle = useCallback(async () => {
+    if (status === 'recording') {
+      await finish()
+      return
+    }
+    if (status === 'transcribing') {
+      cancel()
+      return
+    }
+    await start()
+  }, [status, start, finish, cancel])
 
   useEffect(() => {
     if (status !== 'recording') {
@@ -148,5 +154,5 @@ export const useVoiceInput = (onText: (text: string) => void) => {
   /** 当前录音的频谱分析节点，未录音时为 null */
   const getAnalyser = useCallback(() => recordingRef.current?.analyser ?? null, [])
 
-  return { status, seconds, getAnalyser, toggle, cancel, available: AVAILABLE }
+  return { status, seconds, getAnalyser, toggle, start, finish, cancel, available: AVAILABLE }
 }
